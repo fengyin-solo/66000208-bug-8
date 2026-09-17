@@ -1,18 +1,15 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field
+from typing import Any, List, Optional
 
-class ModbusRegister(BaseModel):
+
+class BatchReadPoint(BaseModel):
+    device_id: str
     address: int
-    name: str
-    type: str
-    value: float
-    unit: str
 
-class Device(BaseModel):
-    id: str
-    name: str
-    ip: str
-    port: int
-    slave_id: int
-    online: bool
-    registers: List[ModbusRegister] = []
+
+class BatchReadRequest(BaseModel):
+    points: List[BatchReadPoint] = Field(..., description="待读取点位列表")
+
+
+class WriteRequest(BaseModel):
+    value: Any = Field(..., description="写入值：保持寄存器为整数(uint16)，线圈为 0/1")

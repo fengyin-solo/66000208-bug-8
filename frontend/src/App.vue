@@ -43,14 +43,16 @@
     <div class="flex-1 flex flex-col gap-3 p-4 overflow-y-auto">
       <!-- Register Gauges -->
       <div class="grid grid-cols-4 gap-3">
-        <div v-for="d in store.devices" :key="d.id" v-for="r in d.registers" :k="r.address"
-          class="bg-gray-900 rounded-xl p-3">
-          <div class="text-xs text-gray-400">{{ d.name }}</div>
-          <div class="text-2xl font-bold" :class="d.online ? 'text-orange-400' : 'text-gray-600'">
-            {{ typeof r.value === 'number' ? r.value.toFixed(r.value > 100 ? 0 : 1) : r.value ? 'ON' : 'OFF' }}
+        <template v-for="d in store.devices" :key="d.id">
+          <div v-for="r in d.registers" :key="`${d.id}_${r.address}`"
+            class="bg-gray-900 rounded-xl p-3">
+            <div class="text-xs text-gray-400">{{ d.name }}</div>
+            <div class="text-2xl font-bold" :class="d.online ? 'text-orange-400' : 'text-gray-600'">
+              {{ typeof r.value === 'number' ? r.value.toFixed(r.value > 100 ? 0 : 1) : r.value ? 'ON' : 'OFF' }}
+            </div>
+            <div class="text-xs text-gray-500">{{ r.name }} {{ r.unit }}</div>
           </div>
-          <div class="text-xs text-gray-500">{{ r.name }} {{ r.unit }}</div>
-        </div>
+        </template>
       </div>
 
       <!-- Chart -->
@@ -59,6 +61,32 @@
           实时趋势 — {{ store.selectedDevice?.name || '选择设备' }}
         </h3>
         <TrendChart />
+      </div>
+
+      <!-- Read / Write Control -->
+      <ControlPanel />
+
+      <!-- Operation Log: success vs failure clearly distinguishable -->
+      <div v-if="store.opLogs.length" class="bg-gray-900 rounded-xl p-3 max-h-44 overflow-y-auto">
+        <h3 class="text-sm text-gray-400 mb-2">
+          操作记录
+          <span class="text-green-500 ml-2">成功 {{ store.opLogs.filter(l => l.status === 'success').length }}</span>
+          <span class="text-red-500 ml-2">失败 {{ store.opLogs.filter(l => l.status === 'failure').length }}</span>
+        </h3>
+        <div v-for="l in store.opLogs.slice(0, 20)" :key="l.id"
+          class="flex justify-between gap-2 text-xs bg-gray-800 rounded p-1.5 mb-1"
+          :class="{ 'border-l-4 border-green-600': l.status === 'success', 'border-l-4 border-red-600': l.status === 'failure' }">
+          <div class="flex gap-2 min-w-0">
+            <span class="shrink-0" :class="l.status === 'success' ? 'text-green-400' : 'text-red-400'">
+              {{ l.status === 'success' ? '✓' : '✗' }}
+            </span>
+            <span class="text-gray-400 shrink-0">{{ opKindLabel(l.kind) }}</span>
+            <span class="text-gray-300 truncate">{{ l.deviceId }}<template v-if="l.address !== undefined">:{{ l.address }}</template></span>
+            <span v-if="l.status === 'success'" class="text-green-300 truncate">{{ l.detail }}</span>
+            <span v-else class="text-red-300 truncate">[{{ l.errorCode }}] {{ l.error }}</span>
+          </div>
+          <span class="text-gray-500 shrink-0">{{ new Date(l.timestamp).toLocaleTimeString() }}</span>
+        </div>
       </div>
 
       <!-- Alarm List -->
@@ -82,9 +110,15 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useModbusStore } from './store/modbus'
 import TrendChart from './components/TrendChart.vue'
+import ControlPanel from './components/ControlPanel.vue'
+import type { OpKind } from './types'
 
 const store = useModbusStore()
 let timer: number | null = null
+
+function opKindLabel(kind: OpKind) {
+  return kind === 'read' ? '读取' : kind === 'write' ? '写入' : '批量读'
+}
 
 function startPoll() {
   store.isPolling = true

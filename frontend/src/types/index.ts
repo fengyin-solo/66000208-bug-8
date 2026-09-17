@@ -26,3 +26,20 @@ export interface Alarm {
   timestamp: number
   acknowledged: boolean
 }
+
+export type OpKind = 'read' | 'write' | 'batch-read'
+export type OpStatus = 'success' | 'failure'
+
+export interface OpLog {
+  id: string
+  kind: OpKind
+  deviceId: string
+  address?: number
+  /** 成功时的值描述；失败时为空 */
+  detail?: string
+  /** 失败原因（成功时为空），失败与成功据此可分辨 */
+  errorCode?: string
+  error?: string
+  status: OpStatus
+  timestamp: number
+}
