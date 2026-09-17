@@ -21,6 +21,7 @@ export const useModbusStore = defineStore('modbus', () => {
           { address: 0, name: '温度', type: 'holding', value: 25.6, unit: '°C', updatedAt: Date.now() },
           { address: 1, name: '湿度', type: 'holding', value: 62.3, unit: '%RH', updatedAt: Date.now() },
           { address: 2, name: '露点', type: 'holding', value: 17.8, unit: '°C', updatedAt: Date.now() },
+          { address: 3, name: '温度设定', type: 'holding', value: 26.0, unit: '°C', writable: true, minValue: 0, maxValue: 100.0, updatedAt: Date.now() },
         ]
       },
       {
@@ -28,6 +29,7 @@ export const useModbusStore = defineStore('modbus', () => {
         registers: [
           { address: 0, name: '管道压力', type: 'holding', value: 3.45, unit: 'MPa', updatedAt: Date.now() },
           { address: 1, name: '差压', type: 'holding', value: 0.12, unit: 'kPa', updatedAt: Date.now() },
+          { address: 2, name: '压力上限设定', type: 'holding', value: 10.0, unit: 'kPa', writable: true, minValue: 0, maxValue: 25.0, updatedAt: Date.now() },
         ]
       },
       {
@@ -36,6 +38,7 @@ export const useModbusStore = defineStore('modbus', () => {
           { address: 0, name: '转速', type: 'holding', value: 1480, unit: 'RPM', updatedAt: Date.now() },
           { address: 1, name: '电流', type: 'holding', value: 12.5, unit: 'A', updatedAt: Date.now() },
           { address: 2, name: '运行状态', type: 'coil', value: true, unit: '', updatedAt: Date.now() },
+          { address: 3, name: '转速设定', type: 'holding', value: 1500, unit: 'RPM', writable: true, minValue: 0, maxValue: 3000, updatedAt: Date.now() },
         ]
       },
       {
@@ -90,9 +93,22 @@ export const useModbusStore = defineStore('modbus', () => {
     if (d) d.online = !d.online
   }
 
+  /** Update one register from a value confirmed by the backend.
+   *  Called only after a write succeeds; failed writes never touch state,
+   *  so the panel keeps showing the old (real) value. */
+  function syncRegisterValue(deviceId: string, address: number, value: number) {
+    const dev = devices.value.find(d => d.id === deviceId)
+    const reg = dev?.registers.find(r => r.address === address)
+    if (reg) {
+      reg.value = value
+      reg.updatedAt = Date.now()
+    }
+  }
+
   return {
     devices, alarms, historyData, isPolling, pollInterval, selectedDevice,
     criticalAlarms, onlineDevices,
-    initMockDevices, simulatePoll, acknowledgeAlarm, toggleDevice
+    initMockDevices, simulatePoll, acknowledgeAlarm, toggleDevice,
+    syncRegisterValue
   }
 })

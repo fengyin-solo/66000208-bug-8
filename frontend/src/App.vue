@@ -43,22 +43,29 @@
     <div class="flex-1 flex flex-col gap-3 p-4 overflow-y-auto">
       <!-- Register Gauges -->
       <div class="grid grid-cols-4 gap-3">
-        <div v-for="d in store.devices" :key="d.id" v-for="r in d.registers" :k="r.address"
-          class="bg-gray-900 rounded-xl p-3">
-          <div class="text-xs text-gray-400">{{ d.name }}</div>
-          <div class="text-2xl font-bold" :class="d.online ? 'text-orange-400' : 'text-gray-600'">
-            {{ typeof r.value === 'number' ? r.value.toFixed(r.value > 100 ? 0 : 1) : r.value ? 'ON' : 'OFF' }}
+        <template v-for="d in store.devices" :key="d.id">
+          <div v-for="r in d.registers" :key="`${d.id}-${r.address}`"
+            class="bg-gray-900 rounded-xl p-3">
+            <div class="text-xs text-gray-400">{{ d.name }}</div>
+            <div class="text-2xl font-bold" :class="d.online ? 'text-orange-400' : 'text-gray-600'">
+              {{ typeof r.value === 'number' ? r.value.toFixed(r.value > 100 ? 0 : 1) : r.value ? 'ON' : 'OFF' }}
+            </div>
+            <div class="text-xs text-gray-500">{{ r.name }} {{ r.unit }}</div>
           </div>
-          <div class="text-xs text-gray-500">{{ r.name }} {{ r.unit }}</div>
-        </div>
+        </template>
       </div>
 
-      <!-- Chart -->
-      <div class="bg-gray-900 rounded-xl p-3 flex-1">
-        <h3 class="text-sm text-gray-400 mb-2">
-          实时趋势 — {{ store.selectedDevice?.name || '选择设备' }}
-        </h3>
-        <TrendChart />
+      <!-- Chart + Write Panel -->
+      <div class="flex gap-3 flex-1 min-h-0">
+        <div class="bg-gray-900 rounded-xl p-3 flex-1">
+          <h3 class="text-sm text-gray-400 mb-2">
+            实时趋势 — {{ store.selectedDevice?.name || '选择设备' }}
+          </h3>
+          <TrendChart />
+        </div>
+        <div class="w-80 shrink-0">
+          <WritePanel />
+        </div>
       </div>
 
       <!-- Alarm List -->
@@ -82,6 +89,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useModbusStore } from './store/modbus'
 import TrendChart from './components/TrendChart.vue'
+import WritePanel from './components/WritePanel.vue'
 
 const store = useModbusStore()
 let timer: number | null = null

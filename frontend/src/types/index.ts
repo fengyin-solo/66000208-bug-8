@@ -5,6 +5,9 @@ export interface ModbusRegister {
   value: number | boolean
   unit: string
   updatedAt: number
+  writable?: boolean
+  minValue?: number
+  maxValue?: number
 }
 
 export interface Device {
